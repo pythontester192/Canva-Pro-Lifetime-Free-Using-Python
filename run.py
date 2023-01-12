@@ -1,51 +1,40 @@
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver import ActionChains
-import time
+import asyncio
+from pyppeteer import launch
 
-# Configure Chrome options to run in headless mode
-options = Options()
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36")
-options.add_argument("--lang=en")
-options.add_argument("--headless")
-options.add_experimental_option('excludeSwitches', ['enable-logging'])
-
-# Initialize a new web browser instance
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-# Navigate to the website
-driver.get("https://www.edukasicampus.net/2022/11/canva-pros-and-cons-review-canva.html")
-time.sleep(5)
-
-# Scroll down until the element with the text "Script link" is found
-while True:
-    try:
-        script_link_element = driver.find_element(By.XPATH, "//*[@id='link']")
-        # scroll to the element
-        actions = ActionChains(driver)
-        actions.move_to_element(script_link_element)
-        actions.perform()
-        break
-    except:
-        print("Canva Pro Link Not Found!")
-
-# Wait for 60 seconds until the span with the id "link" is found
-try:
+async def main():
+    # Launch a new browser instance
+    browser = await launch(headless=True)
+    # Create a new page
+    page = await browser.newPage()
+    # Set the user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36')
+    # Navigate to the website
+    await page.goto("https://bingotingo.com/best-social-media-platforms/")
+    # Wait for the element with the text "Free Guide" to load
+    await page.waitForXPath("//h2[text()='Free Guide']")
+    # Scroll down until the element with the text "Script link" is found
+    await page.xpath("//h2[text()='Free Guide']")
+    # Wait for the button to appear and be clickable
     print("Trying to find canva pro for you! Please wait 60s...")
-    link_span = WebDriverWait(driver, 70).until(EC.presence_of_element_located((By.XPATH, "//*[@id='link']/a")))
-    href_link = driver.find_element(By.XPATH, "//*[@id='link']/a").get_attribute("href")
-    print("Canva Pro Found!")
-
+    await page.waitForXPath("//*[@id='download']", {'visible': True, 'timeout': 70000})
+    button = await page.xpath("//*[@id='download']")
+    # Click the button that opens the new tab
+    await button[0].click()
+    # Wait for the new tab to open
+    await asyncio.sleep(5)
+    # Get the handle of the new tab
+    new_tab = (await browser.pages())[-1]
+    # Switch to the new tab
+    await new_tab.bringToFront()
+    # Extract the href link from the button
+    href_link = await new_tab.xpath("//a[text()='Get Free']")
+    href_link = await (await href_link[0].getProperty('href')).jsonValue()
     #Print the link of canva pro in a text file
     with open("canva_pro_link.txt", "w") as f:
-        f.write(href_link)   
-except TimeoutError:
-    print("Timeout of 60 seconds reached and canva was not found")
+        f.write(href_link)
+        print("Canva Pro Found!")
 
-# Close the browser instance
-driver.quit()
+    # Close the browser instance
+    await browser.close()
+
+asyncio.get_event_loop().run_until_complete(main())

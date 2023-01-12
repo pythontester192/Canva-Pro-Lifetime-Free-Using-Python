@@ -1,1 +1,2 @@
-pip install selenium
+pip install asyncio
+pip install pyppeteer
