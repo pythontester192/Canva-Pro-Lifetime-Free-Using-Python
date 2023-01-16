@@ -27,7 +27,7 @@ async def main():
     # Switch to the new tab
     await new_tab.bringToFront()
     # Extract the href link from the button
-    href_link = await new_tab.xpath("//a[text()='Get Free']")
+    href_link = await new_tab.xpath("//a[text()='GET HERE']")
     href_link = await (await href_link[0].getProperty('href')).jsonValue()
     #Print the link of canva pro in a text file
     with open("canva_pro_link.txt", "w") as f:
